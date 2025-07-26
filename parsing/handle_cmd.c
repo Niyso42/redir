@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/27 23:17:09 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/23 19:24:23 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/27 01:22:31 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,14 +84,57 @@ static int init_exit_data(t_data *data) {
   return (1);
 }
 
+static int init_default_env(t_data *data) {
+  char cwd[BUFFER_SIZE];
+  char *default_env[4];
+
+  if (!getcwd(cwd, BUFFER_SIZE))
+    return (0);
+  
+  default_env[0] = ft_strjoin("PWD=", cwd);
+  default_env[1] = ft_strdup("SHLVL=0");
+  default_env[2] = ft_strdup("_=/usr/bin/env");
+  default_env[3] = NULL;
+  
+  if (!default_env[0] || !default_env[1] || !default_env[2]) {
+    if (default_env[0]) free(default_env[0]);
+    if (default_env[1]) free(default_env[1]);
+    if (default_env[2]) free(default_env[2]);
+    return (0);
+  }
+  
+  data->env->env = (char **)malloc(sizeof(char *) * 4);
+  if (!data->env->env) {
+    free(default_env[0]);
+    free(default_env[1]);
+    free(default_env[2]);
+    return (0);
+  }
+  
+  data->env->env[0] = default_env[0];
+  data->env->env[1] = default_env[1];
+  data->env->env[2] = default_env[2];
+  data->env->env[3] = NULL;
+  
+  return (1);
+}
+
 static int init_env_data(t_data *data, char **envp) {
   data->env = malloc(sizeof(t_env));
   if (!data->env)
     return (0);
-  copy_env(data, envp);
-  if (!data->env->env) {
-    free(data->env);
-    return (0);
+  
+  if (!envp || !envp[0]) {
+    if (!init_default_env(data)) {
+      free(data->env);
+      return (0);
+    }
+  } else {
+    copy_env(data, envp);
+    if (!data->env->env) {
+      free(data->env);
+      return (0);
+    }
   }
   return (1);
 }
@@ -109,6 +152,7 @@ t_data *init_data(char **envp) {
     free(data->exit);
     return (free(data), NULL);
   }
+  update_shlvl(data);
   data->token = NULL;
   data->cmd = NULL;
   data->should_exit = 0;

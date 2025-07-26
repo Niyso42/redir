@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 16:29:38 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/26 23:17:07 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/27 01:22:33 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,6 +126,7 @@ void copy_env(t_data *data, char **envp);
 void execute_cmd(char *path, char **argv, t_data *data);
 char *prepare_path(char *cmd, t_data *data);
 char *get_path(char *cmd, t_data *data, char **argv);
+void update_shlvl(t_data *data);
 void free_env(t_env *env);
 void free_tab(char **str);
 void free_cmd(t_cmd *cmd);

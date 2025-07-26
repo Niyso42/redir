@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 18:54:11 by mubersan          #+#    #+#             */
-/*   Updated: 2025/06/29 22:00:34 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/27 01:22:32 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -48,6 +48,8 @@ void copy_env(t_data *data, char **envp) {
   int count;
 
   if (!data || !envp)
+    return;
+  if (!envp[0]) 
     return;
   count = count_env_vars(envp);
   data->env->env = (char **)malloc(sizeof(char *) * (count + 1));
@@ -124,4 +126,31 @@ char *get_path(char *cmd, t_data *data, char **argv) {
   }
   free_tab(path);
   return (NULL);
+}
+
+void update_shlvl(t_data *data) {
+  int i;
+  int shlvl;
+  char *new_shlvl;
+  char *value;
+
+  if (!data || !data->env || !data->env->env)
+    return;
+  
+  i = 0;
+  while (data->env->env[i]) {
+    if (ft_strncmp(data->env->env[i], "SHLVL=", 6) == 0) {
+      value = data->env->env[i] + 6;
+      shlvl = ft_atoi(value);
+      shlvl++;
+      new_shlvl = ft_itoa(shlvl);
+      if (new_shlvl) {
+        free(data->env->env[i]);
+        data->env->env[i] = ft_strjoin("SHLVL=", new_shlvl);
+        free(new_shlvl);
+      }
+      return;
+    }
+    i++;
+  }
 }
