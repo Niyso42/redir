@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/27 23:17:09 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/28 19:14:57 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 20:50:20 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,7 @@ t_cmd *init_struct(void) {
   new_cmd->infile = NULL;
   new_cmd->outfile = NULL;
   new_cmd->append = 0;
+  new_cmd->redir_in = NULL;
   new_cmd->heredoc = NULL;
   new_cmd->nb_heredoc = 0;
   new_cmd->heredoc_fd = -1;
@@ -169,13 +170,13 @@ void handle_pipe_cmd(t_cmd **current_cmd) {
   *current_cmd = new_cmd;
 }
 
-void handle_redin_cmd(t_cmd *cmd, t_token *token) {
-  if (token->next == NULL)
-    return;
-  if (cmd->infile)
-    free(cmd->infile);
-  cmd->infile = ft_strdup(token->next->content);
-}
+// void handle_redin_cmd(t_cmd *cmd, t_token *token) {
+//   if (token->next == NULL)
+//     return;
+//   if (cmd->infile)
+//     free(cmd->infile);
+//   cmd->infile = ft_strdup(token->next->content);
+// }
 
 void handle_append_cmd(t_cmd *cmd, t_token *token) {
     int fd;
@@ -193,12 +194,12 @@ void handle_append_cmd(t_cmd *cmd, t_token *token) {
     cmd->append = 1;
 }
 
-void handle_heredoc_cmd(t_cmd *cmd, t_token *token, int *i) {
-  if (token->next == NULL)
-    return;
-  cmd->heredoc[*i] = ft_strdup(token->next->content);
-  (*i)++;
-}
+// void handle_heredoc_cmd(t_cmd *cmd, t_token *token, int *i) {
+//   if (token->next == NULL)
+//     return;
+//   cmd->heredoc[*i] = ft_strdup(token->next->content);
+//   (*i)++;
+// }
 
 void handle_redout_cmd(t_cmd *cmd, t_token *token) 
 {
@@ -249,45 +250,67 @@ void fill_heredocs_from_tokens(t_token *token, t_cmd *cmd) {
   }
 }
 
-t_cmd *parse_tokens(t_token *token) {
-  t_cmd *head;
-  t_cmd *current_cmd;
+void add_redir_in(t_cmd *cmd, int type, const char *value) {
+    t_redir_in *new;
+    t_redir_in *tmp;
 
-  if (!token)
-    return (NULL);
-  head = init_struct();
-  if (!head)
-    return (NULL);
-  current_cmd = head;
-  while (token != NULL) {
-    if (token->type == WORD)
-      handle_word_cmd(current_cmd, token);
-    else if (token->type == PIPE) {
-      handle_pipe_cmd(&current_cmd);
-    } else if (token->type == REDIN) {
-      if (!token->next)
-        return (NULL);
-      handle_redin_cmd(current_cmd, token);
-      token = token->next;
-    } else if (token->type == REDOUT) {
-      if (!token->next)
-        return (NULL);
-      handle_redout_cmd(current_cmd, token);
-      token = token->next;
-    } else if (token->type == APPEND) {
-      if (!token->next)
-        return (NULL);
-      handle_append_cmd(current_cmd, token);
-      token = token->next;
-    } else if (token->type == HEREDOC) {
-      if (!token->next)
-        return (NULL);
-      token = token->next;
+    new = malloc(sizeof(t_redir_in));
+    if (!new)
+        return;
+    new->type = type;
+    new->value = ft_strdup(value);
+    new->next = NULL;
+    if (!cmd->redir_in) {
+        cmd->redir_in = new;
+        return;
     }
-    token = token->next;
-  }
-  return (head);
+    tmp = cmd->redir_in;
+    while (tmp->next)
+        tmp = tmp->next;
+    tmp->next = new;
 }
+
+t_cmd *parse_tokens(t_token *token) {
+    t_cmd *head;
+    t_cmd *current_cmd;
+
+    if (!token)
+        return (NULL);
+    head = init_struct();
+    if (!head)
+        return (NULL);
+    current_cmd = head;
+    while (token != NULL) {
+        if (token->type == WORD)
+            handle_word_cmd(current_cmd, token);
+        else if (token->type == PIPE) {
+            handle_pipe_cmd(&current_cmd);
+        } else if (token->type == REDIN) {
+            if (!token->next)
+                return (NULL);
+            add_redir_in(current_cmd, REDIN, token->next->content);
+            token = token->next;
+        } else if (token->type == REDOUT) {
+            if (!token->next)
+                return (NULL);
+            handle_redout_cmd(current_cmd, token);
+            token = token->next;
+        } else if (token->type == APPEND) {
+            if (!token->next)
+                return (NULL);
+            handle_append_cmd(current_cmd, token);
+            token = token->next;
+        } else if (token->type == HEREDOC) {
+            if (!token->next)
+                return (NULL);
+            add_redir_in(current_cmd, HEREDOC, token->next->content);
+            token = token->next;
+        }
+        token = token->next;
+    }
+    return (head);
+}
+
 
 char **build_argv(t_cmd *cmd) {
   char **argv;

@@ -6,11 +6,22 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/14 22:57:01 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/23 01:52:53 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 20:46:57 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/minishell.h"
+
+static void free_redir_in_list(t_redir_in *redir) {
+    t_redir_in *tmp;
+    while (redir) {
+        tmp = redir->next;
+        if (redir->value)
+            free(redir->value);
+        free(redir);
+        redir = tmp;
+    }
+}
 
 static void free_cmd_args(char **args) {
   int i;
@@ -47,6 +58,7 @@ void free_single_cmd(t_cmd *cmd) {
   if (cmd->outfile)
     free(cmd->outfile);
   free_cmd_heredoc(cmd->heredoc, cmd->nb_heredoc);
+  free_redir_in_list(cmd->redir_in);
   free(cmd);
 }
 

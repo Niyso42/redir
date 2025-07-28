@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 16:29:38 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/28 19:15:12 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 20:47:23 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -54,6 +54,12 @@ typedef struct s_token {
   struct s_token *next;
 } t_token;
 
+typedef struct s_redir_in {
+    int type;
+    char *value;
+    struct s_redir_in *next;
+} t_redir_in;
+
 typedef struct s_exec_context {
   int *fds;
   int index;
@@ -67,6 +73,7 @@ typedef struct s_cmd {
   char *infile;
   char *outfile;
   int append;
+  t_redir_in *redir_in;
   char **heredoc;
   int nb_heredoc;
   int heredoc_fd;
@@ -193,4 +200,5 @@ void	handle_sigint_heredoc(void);
 void cleanup_and_exit(char **argv, t_data *data, int exit_code);
 void close_all_fds(int *fds, int count);
 void close_leaking_fds(t_cmd *cmd, t_data *data);
+void add_redir_in(t_cmd *cmd, int type, const char *value);
 #endif

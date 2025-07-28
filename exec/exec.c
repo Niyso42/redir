@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 17:30:39 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/28 16:28:26 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 20:51:48 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -190,35 +190,39 @@ int create_fds(t_cmd *cmd, int **fds_out) {
 }
 
 int redirect_input(t_cmd *cmd, int *fds, int index) {
-  int fd;
+    int fd;
+    t_redir_in *last = NULL;
+    t_redir_in *tmp = cmd->redir_in;
 
-  if (cmd->infile == NULL && cmd->heredoc_fd <= 2 && index > 0) {
-    dup2(fds[(index - 1) * 2], 0);
-    close(fds[(index - 1) * 2]);
+    while (tmp) {
+        last = tmp;
+        tmp = tmp->next;
+    }
+
+    if (last) {
+        if (last->type == REDIN) {
+            if (access(last->value, F_OK | R_OK) == -1) {
+                dprintf(2, "minishell: %s: ", last->value);
+                perror("");
+                return 0;
+            }
+            fd = open(last->value, O_RDONLY);
+            if (fd == -1) {
+                dprintf(2, "minishell: %s: No such file or directory\n", last->value);
+                return 0;
+            }
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        } else if (last->type == HEREDOC && cmd->heredoc_fd > 2) {
+            dup2(cmd->heredoc_fd, STDIN_FILENO);
+            close(cmd->heredoc_fd);
+            cmd->heredoc_fd = -1;
+        }
+    } else if (index > 0 && fds) {
+        dup2(fds[(index - 1) * 2], STDIN_FILENO);
+        close(fds[(index - 1) * 2]);
+    }
     return 1;
-  }
-
-  if (cmd->heredoc_fd > 2) {
-    dup2(cmd->heredoc_fd, STDIN_FILENO);
-    close(cmd->heredoc_fd);
-    cmd->heredoc_fd = -1;
-  }
-  
-  if (cmd->infile != NULL) {
-    if (access(cmd->infile, F_OK | R_OK) == -1) {
-      dprintf(2, "minishell: %s: ", cmd->infile);
-      perror("");
-      return 0;
-    }
-    fd = open(cmd->infile, O_RDONLY);
-    if (fd == -1) {
-      dprintf(2, "minishell: %s: No such file or directory\n", cmd->infile);
-      return 0;
-    }
-    dup2(fd, 0);
-    close(fd);
-  }
-  return 1;
 }
 
 int redirect_output(t_cmd *cmd, int *fds, int index, int is_last) {
