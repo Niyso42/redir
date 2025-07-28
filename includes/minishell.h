@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/24 16:29:38 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/27 01:22:33 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 19:15:12 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -188,7 +188,8 @@ void execute_one_cmd(t_cmd *cmd, t_exec_context *ctx, t_data *data,
 void execute_all_cmd(t_cmd *cmd, t_data *data, t_token *tokens);
 void handle_sigint(int sig);
 void free_single_cmd(t_cmd *cmd);
-void	handle_sigint_heredoc(int sig);
+void	handle_sigint_heredoc2(int sig);
+void	handle_sigint_heredoc(void);
 void cleanup_and_exit(char **argv, t_data *data, int exit_code);
 void close_all_fds(int *fds, int count);
 void close_leaking_fds(t_cmd *cmd, t_data *data);

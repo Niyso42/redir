@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/24 20:31:59 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/26 23:55:24 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 15:48:03 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,11 +15,9 @@
 static void close_heredoc_leaking_fds(int write_fd) {
   int fd;
   
-  // Ferme tous les descripteurs de fichiers à partir de 3 jusqu'à 1024
-  // sauf ceux qui sont essentiels (comme stdin, stdout, stderr) et write_fd
   fd = 3;
   while (fd < 1024) {
-    if (fd != write_fd) // Garde write_fd ouvert car c'est le fd du pipe de heredoc
+    if (fd != write_fd) 
       close(fd);
     fd++;
   }
@@ -52,8 +50,6 @@ void allocate_heredoc(t_token *token, t_cmd *cmd)
 		current = current->next;
 	}
 }
-
-// builtin dans un pipe fait des leaks 
 
 void process_heredocs(t_cmd *cmd, t_data *data)
 {
@@ -88,7 +84,6 @@ int handle_no_command(t_cmd *cmds, t_data *data, t_token *tokens, char *prompt)
 
 void handle_heredoc_eof(char *delimiter)
 {
-    ft_putchar_fd('\n', 1);
     ft_putstr_fd("bash: warning: here-document delimited by end-of-file (wanted `", 2);
     ft_putstr_fd(delimiter, 2);
     ft_putstr_fd("')\n", 2);
@@ -114,7 +109,7 @@ int process_heredoc_line(char *line, char *delimiter, int fd, int is_last)
     return (0);
 }
 
-static void	process_single_heredoc(t_cmd *cmd, int write_fd, int index)
+static void	process_single_heredoc(t_cmd *cmd, int write_fd, int index, t_data *data)
 {
 	char	*line;
 
@@ -122,6 +117,11 @@ static void	process_single_heredoc(t_cmd *cmd, int write_fd, int index)
 	{
 		ft_putstr_fd("> ", 1);
 		line = get_next_line(0);
+		if (g_exit_status == 1)
+		{
+			close(write_fd);
+			cleanup_and_exit(NULL, data, 130);
+		}
 		if (!line)
 		{
 			handle_heredoc_eof(cmd->heredoc[index]);
@@ -137,13 +137,12 @@ void heredoc_child_process(t_cmd *cmd, int write_fd, t_data *data)
 {
 	int	i;
 
-	disable_echoctl();
-	signal(SIGINT, handle_sigint_heredoc);
-	close_heredoc_leaking_fds(write_fd); // Ferme tous les fd sauf stdin, stdout, stderr et write_fd
+	handle_sigint_heredoc();
+	close_heredoc_leaking_fds(write_fd);
 	i = 0;
 	while (i < cmd->nb_heredoc)
 	{
-		process_single_heredoc(cmd, write_fd, i);
+		process_single_heredoc(cmd, write_fd, i, data);
 		i++;
 	}
 	close(write_fd);

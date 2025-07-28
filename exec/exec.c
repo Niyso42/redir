@@ -6,7 +6,7 @@
 /*   By: mubersan <mubersan@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/13 17:30:39 by mubersan          #+#    #+#             */
-/*   Updated: 2025/07/27 00:01:51 by mubersan         ###   ########.fr       */
+/*   Updated: 2025/07/28 16:28:26 by mubersan         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,25 +192,18 @@ int create_fds(t_cmd *cmd, int **fds_out) {
 int redirect_input(t_cmd *cmd, int *fds, int index) {
   int fd;
 
-  // Priorité à pipe si pas de redirection explicite
   if (cmd->infile == NULL && cmd->heredoc_fd <= 2 && index > 0) {
     dup2(fds[(index - 1) * 2], 0);
     close(fds[(index - 1) * 2]);
     return 1;
   }
 
-  // À ce stade, nous avons soit un infile, soit un heredoc, soit les deux
-  // Dans tous les cas, nous allons appliquer les redirections dans l'ordre,
-  // et la dernière prendra le dessus
-
-  // Appliquer le heredoc s'il existe
   if (cmd->heredoc_fd > 2) {
     dup2(cmd->heredoc_fd, STDIN_FILENO);
     close(cmd->heredoc_fd);
     cmd->heredoc_fd = -1;
   }
   
-  // Appliquer infile s'il existe (va remplacer heredoc s'il était appliqué avant)
   if (cmd->infile != NULL) {
     if (access(cmd->infile, F_OK | R_OK) == -1) {
       dprintf(2, "minishell: %s: ", cmd->infile);
@@ -225,8 +218,6 @@ int redirect_input(t_cmd *cmd, int *fds, int index) {
     dup2(fd, 0);
     close(fd);
   }
-  
-  return 1;
   return 1;
 }
 
